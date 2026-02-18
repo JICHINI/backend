@@ -6,7 +6,11 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
-      hibernate:
-        ddl-auto: update
-      show-sql: true
-      open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+
+jwt:
+  secret: jichini-secret-key-must-be-at-least-32-characters-long
+  expiration: 86400000
