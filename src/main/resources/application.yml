@@ -6,6 +6,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
-    hibernate:
-    show-sql: true
-    open-in-view: false
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      open-in-view: false
