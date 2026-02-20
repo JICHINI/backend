@@ -22,12 +22,20 @@ public class MemberService {
         if (memberRepository.findByUserId(dto.getUserId()).isPresent()) {
             throw new RuntimeException("이미 존재하는 아이디입니다.");
         }
+
         Member member = Member.builder()
                 .name(dto.getName())
                 .userId(dto.getUserId())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .role(Role.USER)
+                .job(dto.getJob())
+                .location(dto.getLocation())
+                .age(dto.getAge())
+                .concern(dto.getConcern())
+                .concernDetail(dto.getConcernDetail())
+                .emotion(dto.getEmotion())
                 .build();
+
         return memberRepository.save(member);
     }
 

@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -27,4 +26,11 @@ public class Member {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private String job;
+    private String location;
+    private Integer age;
+    private String concern;
+    private String concernDetail;
+    private String emotion;
 }

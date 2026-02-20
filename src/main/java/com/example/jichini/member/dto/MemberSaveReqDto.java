@@ -12,5 +12,12 @@ public class MemberSaveReqDto {
     private String name;
     private String userId;
     private String password;
+
+    private String job;
+    private String location;
+    private Integer age;
+    private String concern;
+    private String concernDetail;
+    private String emotion;
 }
 
