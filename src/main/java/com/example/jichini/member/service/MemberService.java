@@ -8,8 +8,12 @@ import com.example.jichini.member.dto.MemberSaveReqDto;
 import com.example.jichini.member.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +21,9 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final WebClient webClient = WebClient.create("http://localhost:5000");
 
+    @Transactional
     public Member create(MemberSaveReqDto dto) {
         if (memberRepository.findByUserId(dto.getUserId()).isPresent()) {
             throw new RuntimeException("이미 존재하는 아이디입니다.");
@@ -36,10 +42,38 @@ public class MemberService {
                 .emotion(dto.getEmotion())
                 .build();
 
-        return memberRepository.save(member);
+        Member saved = memberRepository.save(member);
+
+        // Pinecone에 임베딩 저장 (고민 상세 우선, 없으면 카테고리)
+        String concernText = (dto.getConcernDetail() != null && !dto.getConcernDetail().isBlank())
+                ? dto.getConcernDetail()
+                : dto.getConcern();
+
+        if (concernText != null && !concernText.isBlank()) {
+            try {
+                webClient.post()
+                        .uri("/embed-user")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(Map.of(
+                                "user_id", dto.getUserId(),
+                                "province", dto.getLocation() != null ? dto.getLocation() : "",
+                                "city", "",
+                                "concern", concernText
+                        ))
+                        .retrieve()
+                        .bodyToMono(Map.class)
+                        .subscribe(
+                                res -> System.out.println("Pinecone 저장 완료: " + res),
+                                err -> System.out.println("Pinecone 저장 실패 (무시): " + err.getMessage())
+                        );
+            } catch (Exception e) {
+                System.out.println("Pinecone 저장 실패 (무시): " + e.getMessage());
+            }
+        }
+
+        return saved;
     }
 
-    // 로그인
     public String login(MemberLoginReqDto dto) {
         Member member = memberRepository.findByUserId(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 아이디입니다."));
@@ -51,4 +85,3 @@ public class MemberService {
         return jwtTokenProvider.createToken(member.getUserId());
     }
 }
-
