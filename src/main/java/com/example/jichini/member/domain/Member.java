@@ -2,13 +2,11 @@ package com.example.jichini.member.domain;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -28,9 +26,13 @@ public class Member {
     private Role role;
 
     private String job;
-    private String location;
+    private String province;
+    private String city;
     private Integer age;
     private String concern;
     private String concernDetail;
     private String emotion;
+    @Column(columnDefinition = "LONGTEXT")
+    private String profileImage;  // Base64 이미지
+    private String tags;          // 태그 샵 형태
 }

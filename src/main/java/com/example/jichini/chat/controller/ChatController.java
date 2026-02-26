@@ -46,7 +46,8 @@ public class ChatController {
         Member member = memberRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
 
-        String province = member.getLocation() != null ? member.getLocation() : "";
+        String province = member.getProvince() != null ? member.getProvince() : "";
+        String city = member.getCity() != null ? member.getCity() : "";
 
         // 사용자 메시지 저장
         chatMessageRepository.save(ChatMessage.builder()

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/member")
@@ -37,5 +39,23 @@ public class MemberController {
         Member member = memberRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
         return ResponseEntity.ok(member);
+    }
+
+    // 내 정보 수정
+    @PatchMapping("/me")
+    public ResponseEntity<?> updateMyInfo(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, Object> body
+    ) {
+        return ResponseEntity.ok(memberService.updateMyInfo(token.replace("Bearer ", ""), body));
+    }
+
+    // 회원 탈퇴
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteMember(
+            @RequestHeader("Authorization") String token
+    ) {
+        memberService.deleteMember(token.replace("Bearer ", ""));
+        return ResponseEntity.ok("탈퇴 완료");
     }
 }
