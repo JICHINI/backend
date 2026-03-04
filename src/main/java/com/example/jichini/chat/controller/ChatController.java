@@ -18,7 +18,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/chat")
 @RequiredArgsConstructor
-public class ChatController {
+public class
+ChatController {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRepository memberRepository;
@@ -81,6 +82,8 @@ public class ChatController {
 
         return ResponseEntity.ok(Map.of("answer", answer));
     }
+
+
 
     private String extractUserId(String authHeader) {
         String token = authHeader.replace("Bearer ", "");

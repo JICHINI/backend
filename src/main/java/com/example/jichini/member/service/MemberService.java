@@ -1,5 +1,8 @@
 package com.example.jichini.member.service;
 
+import com.example.jichini.chat.repository.ChatMessageRepository;
+import com.example.jichini.chatroom.repository.ChatRoomRepository;
+import com.example.jichini.chatroom.repository.RoomMessageRepository;
 import com.example.jichini.common.auth.JwtTokenProvider;
 import com.example.jichini.member.domain.Member;
 import com.example.jichini.member.domain.Role;
@@ -24,6 +27,9 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final RoomMessageRepository roomMessageRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final ChatRoomRepository chatRoomRepository;
     private final WebClient webClient = WebClient.create("http://localhost:5000");
 
     @Transactional
@@ -147,12 +153,16 @@ public class MemberService {
         return jwtTokenProvider.createToken(member.getUserId());
     }
 
-    // 회원 탈퇴
     @Transactional
     public void deleteMember(String token) {
         String userId = jwtTokenProvider.getUserId(token);
         Member member = memberRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("사용자 없음"));
+
+        chatMessageRepository.deleteByUserId(userId);   // AI 채팅 삭제
+        roomMessageRepository.deleteBySenderId(userId);   // 방 메시지 삭제
+        chatRoomRepository.deleteByUserAOrUserB(userId, userId);      // 방 삭제
+
         memberRepository.delete(member);
     }
 

@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RoomMessageRepository extends JpaRepository<RoomMessage, Long> {
     List<RoomMessage> findByRoomIdOrderByCreatedAtAsc(Long roomId);
+    void deleteBySenderId(String senderId);
 }
