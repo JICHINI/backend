@@ -2,6 +2,8 @@ package com.example.jichini.member.domain;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 @Entity
@@ -17,9 +19,14 @@ public class Member {
 
     private String name;
 
+    @Pattern(regexp = "^[a-zA-Z0-9]{3,15}$", message = "아이디는 영문과 숫자를 포함한 3~15자여야 합니다.")
     @Column(nullable = false, unique = true)
     private String userId;
 
+    @Pattern(
+            regexp = "^(?=.*[A-Za-z])(?=.*\\d).{8,}$",
+            message = "비밀번호는 영문과 숫자를 포함하여 8글자 이상이어야 합니다."
+    )
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -30,6 +37,8 @@ public class Member {
     private String city;
     private Integer age;
     private String concern;
+
+    @Column(nullable = false)
     private String concernDetail;
     private String emotion;
     @Column(columnDefinition = "LONGTEXT")

@@ -12,4 +12,5 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     Optional<ChatRoom> findByUserBAndUserA(String userA, String userB);
     // 내가 참여한 방 목록
     List<ChatRoom> findByUserAOrUserB(String userA, String userB);
+    void deleteByUserAOrUserB(String userA, String userB);
 }

@@ -47,7 +47,6 @@ public class RoomChatController {
                         .build())
         );
 
-        // ✅ 상대방에게 실시간 알림 전송 (타입 명시)
         Map<String, Object> notification = new HashMap<>();
         notification.put("type", "NEW_CHAT_REQUEST");
         notification.put("roomId", room.getId());
