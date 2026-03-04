@@ -22,6 +22,11 @@ public class RoomMessage {
 
     private LocalDateTime createdAt;
 
+    @Builder.Default
+    private boolean isRead = false; // 읽은지 안 읽은지
+
+    public void markAsRead() { this.isRead = true; } //읽음 처리
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

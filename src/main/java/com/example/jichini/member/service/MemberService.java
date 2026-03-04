@@ -61,7 +61,7 @@ public class MemberService {
                 ? dto.getConcernDetail()
                 : dto.getConcern();
 
-        if (concernText != null && !concernText.isBlank()) {
+        if (dto.getProvince() != null && dto.getConcern() != null) {
             try {
                 webClient.post()
                         .uri("/embed-user")
@@ -70,7 +70,8 @@ public class MemberService {
                                 "user_id", dto.getUserId(),
                                 "province", dto.getProvince() != null ? dto.getProvince() : "",
                                 "city", dto.getCity() != null ? dto.getCity() : "",
-                                "concern", concernText
+                                "concern", dto.getConcern(),  // 🔥 concern은 concern만
+                                "detail_concern", dto.getConcernDetail() != null ? dto.getConcernDetail() : ""  // 🔥 detail_concern 분리
                         ))
                         .retrieve()
                         .bodyToMono(Map.class)
@@ -131,10 +132,10 @@ public class MemberService {
                 pineconeBody.put("province", member.getProvince());
                 pineconeBody.put("city", member.getCity() != null ? member.getCity() : "");
                 pineconeBody.put("concern", member.getConcern());
+                pineconeBody.put("detail_concern", member.getConcernDetail() != null ? member.getConcernDetail() : ""); // 🔥 추가
 
                 restTemplate.put("http://localhost:5000/embed-user", pineconeBody);
             } catch (Exception e) {
-                // Pinecone 실패해도 MySQL은 정상 저장
                 System.out.println("Pinecone 업데이트 실패: " + e.getMessage());
             }
         }

@@ -87,18 +87,12 @@ public class RoomChatController {
 
     // STOMP 메시지 수신 → 저장 → 브로드캐스트
     @MessageMapping("/chat/{roomId}")
-    public void handleMessage(
-            @DestinationVariable Long roomId,
-            @Payload Map<String, String> payload
-    ) {
+    public void handleMessage(@DestinationVariable Long roomId, @Payload Map<String, String> payload) {
         String senderId = payload.get("senderId");
         String content = payload.get("content");
 
         RoomMessage saved = roomMessageRepository.save(RoomMessage.builder()
-                .roomId(roomId)
-                .senderId(senderId)
-                .content(content)
-                .build());
+                .roomId(roomId).senderId(senderId).content(content).build());
 
         Map<String, Object> messageMap = new HashMap<>();
         messageMap.put("id", saved.getId());
@@ -107,9 +101,78 @@ public class RoomChatController {
         messageMap.put("content", content);
         messageMap.put("createdAt", saved.getCreatedAt().toString());
 
-        // 명시적 타입 캐스팅
         messagingTemplate.convertAndSend("/sub/chat/" + roomId, (Object) messageMap);
+
+        // 🔥 상대방한테 NEW_MESSAGE 알림 (뱃지용)
+        ChatRoom room = chatRoomRepository.findById(roomId).orElse(null);
+        if (room != null) {
+            String partnerId = room.getUserA().equals(senderId) ? room.getUserB() : room.getUserA();
+            Map<String, Object> newMsgEvent = new HashMap<>();
+            newMsgEvent.put("type", "NEW_MESSAGE");
+            newMsgEvent.put("roomId", roomId);
+            messagingTemplate.convertAndSend("/sub/user/" + partnerId, (Object) newMsgEvent);
+        }
     }
+
+    // 전체 안읽은 메시지 수 (네비게이션 뱃지용)
+    @GetMapping("/rooms/unread/total")
+    public ResponseEntity<Map<String, Integer>> getTotalUnread(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String myId = extractUserId(authHeader);
+        List<ChatRoom> myRooms = chatRoomRepository.findByUserAOrUserB(myId, myId);
+
+        int total = myRooms.stream()
+                .mapToInt(room -> roomMessageRepository
+                        .countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), myId))
+                .sum();
+
+        // 99 초과면 99로 제한
+        return ResponseEntity.ok(Map.of("unread", Math.min(total, 99)));
+    }
+
+    // 방별 안읽은 메시지 수 (유저 목록 뱃지용)
+    @GetMapping("/rooms/unread")
+    public ResponseEntity<Map<Long, Integer>> getUnreadPerRoom(
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String myId = extractUserId(authHeader);
+        List<ChatRoom> myRooms = chatRoomRepository.findByUserAOrUserB(myId, myId);
+
+        Map<Long, Integer> result = new HashMap<>();
+        for (ChatRoom room : myRooms) {
+            int count = roomMessageRepository
+                    .countByRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), myId);
+            result.put(room.getId(), count);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/rooms/{roomId}/read")
+    public ResponseEntity<?> markAsRead(
+            @PathVariable Long roomId,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String myId = extractUserId(authHeader);
+        List<RoomMessage> unread = roomMessageRepository
+                .findByRoomIdAndSenderIdNotAndIsReadFalse(roomId, myId);
+        unread.forEach(RoomMessage::markAsRead);
+        roomMessageRepository.saveAll(unread);
+
+        // 🔥 상대방한테 읽음 처리 WebSocket 알림
+        ChatRoom room = chatRoomRepository.findById(roomId).orElse(null);
+        if (room != null) {
+            String partnerId = room.getUserA().equals(myId) ? room.getUserB() : room.getUserA();
+            Map<String, Object> readEvent = new HashMap<>();
+            readEvent.put("type", "READ");
+            readEvent.put("roomId", roomId);
+            messagingTemplate.convertAndSend("/sub/user/" + partnerId, (Object) readEvent);
+        }
+
+        return ResponseEntity.ok(Map.of("status", "ok"));
+    }
+
+
 
     private String extractUserId(String authHeader) {
         return jwtTokenProvider.getUserId(authHeader.replace("Bearer ", ""));
