@@ -5,6 +5,7 @@ import com.example.jichini.chatroom.domain.RoomMessage;
 import com.example.jichini.chatroom.repository.ChatRoomRepository;
 import com.example.jichini.chatroom.repository.RoomMessageRepository;
 import com.example.jichini.common.auth.JwtTokenProvider;
+import com.example.jichini.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class RoomChatController {
     private final ChatRoomRepository chatRoomRepository;
     private final RoomMessageRepository roomMessageRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final MemberRepository memberRepository;
 
     // 채팅방 생성 or 기존 방 반환
     @PostMapping("/rooms")
@@ -64,7 +67,16 @@ public class RoomChatController {
     public ResponseEntity<?> getRooms(@RequestHeader("Authorization") String authHeader) {
         String myId = extractUserId(authHeader);
         List<ChatRoom> rooms = chatRoomRepository.findByUserAOrUserB(myId, myId);
-        return ResponseEntity.ok(rooms);
+
+        // ✅ 상대방이 탈퇴한 방 필터링
+        List<ChatRoom> activeRooms = rooms.stream()
+                .filter(room -> {
+                    String partnerId = room.getUserA().equals(myId) ? room.getUserB() : room.getUserA();
+                    return memberRepository.findByUserId(partnerId).isPresent();
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(activeRooms);
     }
 
     // 채팅방 메시지 기록
