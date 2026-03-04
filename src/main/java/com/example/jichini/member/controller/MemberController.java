@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.Map;
+
 
 @RequiredArgsConstructor
 @RestController
@@ -20,6 +22,7 @@ public class MemberController {
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRepository memberRepository;
+
 
     @PostMapping("/create")
     public ResponseEntity<?> memberCreate(@RequestBody MemberSaveReqDto memberSaveReqDto) {
@@ -48,6 +51,20 @@ public class MemberController {
             @RequestBody Map<String, Object> body
     ) {
         return ResponseEntity.ok(memberService.updateMyInfo(token.replace("Bearer ", ""), body));
+    }
+
+    // 다른 유저 프로필 조회
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<?> getProfile(@PathVariable String userId) {
+        return memberRepository.findByUserId(userId)
+                .map(member -> ResponseEntity.ok(Map.of(
+                        "userId", member.getUserId(),
+                        "name", member.getName(),
+                        "profileImage", member.getProfileImage() != null ? member.getProfileImage() : "",
+                        "province", member.getProvince() != null ? member.getProvince() : "",
+                        "city", member.getCity() != null ? member.getCity() : ""
+                )))
+                .orElse(ResponseEntity.ok(Map.of("userId", userId, "name", "", "profileImage", "", "province", "", "city", "")));
     }
 
     // 회원 탈퇴
